@@ -1,4 +1,4 @@
 int main(void) {
   // test
-  return 2;
+  return 32;
 }

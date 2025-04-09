@@ -2,8 +2,6 @@
 use crate::lexer::{Token, TokenType};
 use std::error::Error;
 
-// enum
-
 #[derive(Debug)]
 pub enum AST {
     Program(Vec<Function>),
@@ -11,8 +9,8 @@ pub enum AST {
 
 #[derive(Debug, Clone)]
 pub struct Function {
-    name: String,
-    body: Statement,
+    pub name: String,
+    pub body: Statement,
 }
 
 #[derive(Debug)]
@@ -53,11 +51,11 @@ impl Parser {
         Ok(AST::Program(functions))
     }
 
-    pub fn take_token(&mut self) -> Result<Token, Box<dyn Error>> {
+    fn take_token(&mut self) -> Result<Token, Box<dyn Error>> {
         Ok(self.tokens.remove(0))
     }
 
-    pub fn parse_function(&mut self) -> Result<Function, Box<dyn Error>> {
+    fn parse_function(&mut self) -> Result<Function, Box<dyn Error>> {
         let token = self.take_token()?;
 
         if token.kind != TokenType::KeywordInt {
@@ -81,7 +79,7 @@ impl Parser {
         Ok(Function { name, body })
     }
 
-    pub fn parse_statement(&mut self) -> Result<Statement, Box<dyn Error>> {
+    fn parse_statement(&mut self) -> Result<Statement, Box<dyn Error>> {
         let statement = match self.take_token()?.kind {
             TokenType::KeywordReturn => Statement::Return(self.parse_expression()?),
             other => return Err(format!("Expected Statement; found {other:?}").into()),
@@ -92,16 +90,18 @@ impl Parser {
         Ok(statement)
     }
 
-    pub fn parse_expression(&mut self) -> Result<Expression, Box<dyn Error>> {
+    fn parse_expression(&mut self) -> Result<Expression, Box<dyn Error>> {
         let expression = match self.take_token() {
-            Ok(T) if T.kind == TokenType::Constant => Expression::Constant(T.value.parse::<i32>()?),
+            Ok(token) if token.kind == TokenType::Constant => {
+                Expression::Constant(token.value.parse::<i32>()?)
+            }
             other => return Err(format!("Expected Expression; found {other:?}").into()),
         };
 
         Ok(expression)
     }
 
-    pub fn expect(&mut self, expected: TokenType) -> Result<(), Box<dyn Error>> {
+    fn expect(&mut self, expected: TokenType) -> Result<(), Box<dyn Error>> {
         if let Ok(token) = self.take_token() {
             if token.kind != expected {
                 return Err(format!("Unexpected token: {}", token.value).into());
@@ -111,7 +111,7 @@ impl Parser {
         Ok(())
     }
 
-    pub fn expect_stream(&mut self, expected_tokens: &[TokenType]) -> Result<(), Box<dyn Error>> {
+    fn expect_stream(&mut self, expected_tokens: &[TokenType]) -> Result<(), Box<dyn Error>> {
         expected_tokens
             .iter()
             .try_for_each(|expected_token| self.expect(*expected_token))?;
@@ -119,7 +119,7 @@ impl Parser {
         Ok(())
     }
 
-    pub fn expect_identifier(&mut self) -> Result<String, Box<dyn Error>> {
+    fn expect_identifier(&mut self) -> Result<String, Box<dyn Error>> {
         if let Some(token) = self.tokens.first() {
             if token.kind == TokenType::Identifier {
                 return Ok(self.tokens.remove(0).value);
